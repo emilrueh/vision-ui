@@ -27,7 +27,7 @@ def main(page: ft.Page):
 
     def call_vision(event):
         custom_prompt = prompt_input_field.value
-        if custom_prompt:
+        if custom_prompt and selected_images:
             for img in selected_images:
                 base64_images.append(image_to_base64str(image_source=img.path, file_type="JPEG"))
 
@@ -37,8 +37,11 @@ def main(page: ft.Page):
 
             gpt_response = view_image(images_in_base64str=base64_images, prompt=custom_prompt, max_tokens=300)
             response_output_field.value = gpt_response
-        else:
+
+        elif not custom_prompt:
             response_output_field.value = "No prompt input"
+        elif not selected_images:
+            response_output_field.value = "No images selected"
 
         response_output_field.visible = True
         response_output_field.update()
@@ -52,11 +55,13 @@ def main(page: ft.Page):
 
     # calling vision
     prompt_input_field = ft.TextField(label="Input Prompt", on_submit=call_vision, width=500)
-    response_output_field = ft.Text(value="", visible=False, width=600, height=300)
+    response_output_field = ft.Text(value="", visible=False, width=630, height=720)
 
     # aligning elements
-    input_row = ft.Row(controls=[upload_file_button, prompt_input_field], spacing=10)
-    complete_column = ft.Column(controls=[input_row, response_output_field], spacing=10)
+    input_row = ft.Row(controls=[upload_file_button, prompt_input_field], spacing=10, alignment="center")
+    complete_column = ft.Column(
+        controls=[input_row, response_output_field], spacing=10, horizontal_alignment="center"
+    )
 
     page.add(complete_column)
 
