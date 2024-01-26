@@ -11,21 +11,27 @@ def init_openai_client(raw_api_key=None, dotenv_key=None):
     return OpenAI(api_key=api_key)
 
 
+# auth openai
 client = init_openai_client()
 
+# load system prompt
+with open("default_system_prompt.txt", mode="r", encoding="utf-8") as f:
+    default_system_prompt = f.read()
 
-def view_image(images_in_base64str: list, prompt, max_tokens=300):
+
+def view_image(images_in_base64str: list, user_prompt, system_prompt=default_system_prompt, max_tokens=300):
     messages = [
+        {"role": "system", "content": system_prompt},
         {
             "role": "user",
-            "content": [{"type": "text", "text": prompt}],
+            "content": [{"type": "text", "text": user_prompt}],
         },
     ]
 
     for img in images_in_base64str:
         if img is None:
             continue
-        messages[0]["content"].append(
+        messages[1]["content"].append(
             {
                 "type": "image_url",
                 "image_url": {"url": img},
