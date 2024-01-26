@@ -35,7 +35,7 @@ def main(page: ft.Page):
             response_output_field.visible = True
             response_output_field.update()
 
-            gpt_response = view_image(images_in_base64str=base64_images, prompt=custom_prompt, max_tokens=300)
+            gpt_response = view_image(images_in_base64str=base64_images, user_prompt=custom_prompt, max_tokens=300)
             response_output_field.value = gpt_response
 
         elif not custom_prompt:
@@ -55,7 +55,7 @@ def main(page: ft.Page):
 
     # calling vision
     prompt_input_field = ft.TextField(label="Input Prompt", on_submit=call_vision, width=500)
-    response_output_field = ft.Text(value="", visible=False, width=630, height=720)
+    response_output_field = ft.Text(value="", visible=False, width=630, height=300)
 
     # aligning elements
     input_row = ft.Row(controls=[upload_file_button, prompt_input_field], spacing=10, alignment="center")
