@@ -22,7 +22,6 @@ def main(page: ft.Page):
         else:
             response_output_field.value = "No file selected"
 
-        response_output_field.visible = True
         response_output_field.update()
 
     def call_vision(event):
@@ -32,7 +31,6 @@ def main(page: ft.Page):
                 base64_images.append(image_to_base64str(image_source=img.path, file_type="JPEG"))
 
             response_output_field.value = "Calling OpenAI Vision API..."
-            response_output_field.visible = True
             response_output_field.update()
 
             gpt_response = view_image(images_in_base64str=base64_images, user_prompt=custom_prompt, max_tokens=300)
@@ -43,7 +41,6 @@ def main(page: ft.Page):
         elif not selected_images:
             response_output_field.value = "No images selected"
 
-        response_output_field.visible = True
         response_output_field.update()
 
     # picking files
@@ -55,7 +52,14 @@ def main(page: ft.Page):
 
     # calling vision
     prompt_input_field = ft.TextField(label="Input Prompt", on_submit=call_vision, width=500)
-    response_output_field = ft.Text(value="", visible=False, width=630, height=300)
+    response_output_field = ft.TextField(
+        value="",
+        width=630,
+        height=300,
+        multiline=True,  # scrollable
+        read_only=True,  # only used for output
+        border_width=0,
+    )
 
     # aligning elements
     input_row = ft.Row(controls=[upload_file_button, prompt_input_field], spacing=10, alignment="center")
