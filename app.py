@@ -15,14 +15,23 @@ def main(page: ft.Page):
         nonlocal image_verification
 
         if e.files:
+            # reset
+            notification_field.visible = True
+            notification_field.color = "white"
+            notification_field.update()
+
+            output_field.visible = False
+            output_field.update()
+
             for s_img in e.files:
                 selected_images.append(s_img)
                 image_verification += f"{s_img.name}\n"
-            response_output_field.value = image_verification
-        else:
-            response_output_field.value = "No file selected"
+            notification_field.value = image_verification
+        if not selected_images:
+            notification_field.value = "No file selected"
+            notification_field.color = "yellow"
 
-        response_output_field.update()
+        notification_field.update()
 
     def call_vision(event):
         custom_prompt = prompt_input_field.value
@@ -30,18 +39,41 @@ def main(page: ft.Page):
             for img in selected_images:
                 base64_images.append(image_to_base64str(image_source=img.path, file_type="JPEG"))
 
-            response_output_field.value = "Calling OpenAI Vision API..."
-            response_output_field.update()
+            # preparing for output
+            notification_field.visible = True
+            notification_field.value = "Calling OpenAI Vision API..."
+            notification_field.color = "green"
+            notification_field.update()
 
+            progress_bar.visible = True
+            progress_bar.update()
+
+            # receiving output
             gpt_response = view_image(images_in_base64str=base64_images, user_prompt=custom_prompt, max_tokens=300)
-            response_output_field.value = gpt_response
 
-        elif not custom_prompt:
-            response_output_field.value = "No prompt input"
-        elif not selected_images:
-            response_output_field.value = "No images selected"
+            notification_field.visible = False
+            notification_field.update()
 
-        response_output_field.update()
+            progress_bar.visible = False
+            progress_bar.update()
+
+            output_field.visible = True
+            output_field.value = gpt_response
+            output_field.update()
+
+        else:
+            if not custom_prompt:
+                notification_field.value = "No prompt input"
+                notification_field.color = "yellow"
+            elif not selected_images:
+                notification_field.value = "No images selected"
+                notification_field.color = "yellow"
+
+            notification_field.visible = True
+            notification_field.update()
+
+    # notifications
+    notification_field = ft.Text(value="", width=630)
 
     # picking files
     pick_files_dialog = ft.FilePicker(on_result=pick_files_result)
@@ -52,19 +84,22 @@ def main(page: ft.Page):
 
     # calling vision
     prompt_input_field = ft.TextField(label="Input Prompt", on_submit=call_vision, width=500)
-    response_output_field = ft.TextField(
+    output_field = ft.TextField(
         value="",
         width=630,
         height=300,
         multiline=True,  # scrollable
-        read_only=True,  # only used for output
+        read_only=True,  # only output
         border_width=0,
     )
+    progress_bar = ft.ProgressBar(visible=False, color="green", width=630)
 
     # aligning elements
     input_row = ft.Row(controls=[upload_file_button, prompt_input_field], spacing=10, alignment="center")
     complete_column = ft.Column(
-        controls=[input_row, response_output_field], spacing=10, horizontal_alignment="center"
+        controls=[input_row, notification_field, progress_bar, output_field],
+        spacing=10,
+        horizontal_alignment="center",
     )
 
     page.add(complete_column)
