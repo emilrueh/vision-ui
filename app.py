@@ -40,11 +40,18 @@ def main(page: ft.Page):
                 base64_images.append(image_to_base64str(image_source=img.path, file_type="JPEG"))
 
             # preparing for output
+
+            # disabling input for duration of api call
+            upload_file_button.disabled = True
+            upload_file_button.update()
+            prompt_input_field.disabled = True
+            prompt_input_field.update()
+
+            # displaying progress
             notification_field.visible = True
             notification_field.value = "Calling OpenAI Vision API..."
             notification_field.color = "green"
             notification_field.update()
-
             progress_bar.visible = True
             progress_bar.update()
 
@@ -53,13 +60,17 @@ def main(page: ft.Page):
 
             notification_field.visible = False
             notification_field.update()
-
             progress_bar.visible = False
             progress_bar.update()
-
             output_field.visible = True
             output_field.value = gpt_response
             output_field.update()
+
+            # enabling input fields on api response
+            upload_file_button.disabled = False
+            upload_file_button.update()
+            prompt_input_field.disabled = False
+            prompt_input_field.update()
 
         else:
             if not custom_prompt:
