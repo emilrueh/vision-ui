@@ -4,6 +4,13 @@ from src.gpt_vision import view_image
 from src.img_convert import image_to_base64str
 
 
+def update_text(control, value, color="white", visible=True):
+    control.value = value
+    control.color = color
+    control.visible = visible
+    control.update()
+
+
 def main(page: ft.Page):
     page.title = "GPT-Vision UI"
 
@@ -11,27 +18,21 @@ def main(page: ft.Page):
     base64_images = []
     image_verification = "Selected images:\n"
 
-    def pick_files_result(e: ft.FilePickerResultEvent):
+    def pick_files_result(event: ft.FilePickerResultEvent):
         nonlocal image_verification
 
-        if e.files:
-            # reset
-            notification_field.visible = True
-            notification_field.color = "white"
-            notification_field.update()
-
+        if event.files:
             output_field.visible = False
             output_field.update()
 
-            for s_img in e.files:
+            for s_img in event.files:
                 selected_images.append(s_img)
                 image_verification += f"{s_img.name}\n"
-            notification_field.value = image_verification
-        if not selected_images:
-            notification_field.value = "No file selected"
-            notification_field.color = "yellow"
 
-        notification_field.update()
+            update_text(notification_field, image_verification)
+
+        if not selected_images:
+            update_text(notification_field, "No file selected", "yellow")
 
     def call_vision(event):
         custom_prompt = prompt_input_field.value
@@ -48,18 +49,15 @@ def main(page: ft.Page):
             prompt_input_field.update()
 
             # displaying progress
-            notification_field.visible = True
-            notification_field.value = "Calling OpenAI Vision API..."
-            notification_field.color = "green"
-            notification_field.update()
+            update_text(notification_field, "Calling OpenAI Vision API...", "green")
+
             progress_bar.visible = True
             progress_bar.update()
 
             # receiving output
             gpt_response = view_image(images_in_base64str=base64_images, user_prompt=custom_prompt, max_tokens=300)
 
-            notification_field.visible = False
-            notification_field.update()
+            update_text(notification_field, "", visible=False)
             progress_bar.visible = False
             progress_bar.update()
             output_field.visible = True
@@ -74,14 +72,9 @@ def main(page: ft.Page):
 
         else:
             if not custom_prompt:
-                notification_field.value = "No prompt input"
-                notification_field.color = "yellow"
+                update_text(notification_field, "No prompt input", "yellow")
             elif not selected_images:
-                notification_field.value = "No images selected"
-                notification_field.color = "yellow"
-
-            notification_field.visible = True
-            notification_field.update()
+                update_text(notification_field, "No images selected", "yellow")
 
     # notifications
     notification_field = ft.Text(value="", width=630)
