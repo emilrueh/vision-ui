@@ -4,7 +4,7 @@ from src.gpt_vision import view_image
 from src.img_convert import image_to_base64str
 
 
-def update_text(control, value, color="white", visible=True):
+def update_text(control, value="", color="white", visible=True):
     control.value = value
     control.color = color
     control.visible = visible
@@ -21,14 +21,12 @@ def main(page: ft.Page):
     def pick_files_result(event: ft.FilePickerResultEvent):
         nonlocal image_verification
 
-        if event.files:
-            output_field.visible = False
-            output_field.update()
+        update_text(output_field, visible=False)
 
+        if event.files:
             for s_img in event.files:
                 selected_images.append(s_img)
                 image_verification += f"{s_img.name}\n"
-
             update_text(notification_field, image_verification)
 
         if not selected_images:
@@ -41,7 +39,6 @@ def main(page: ft.Page):
                 base64_images.append(image_to_base64str(image_source=img.path, file_type="JPEG"))
 
             # preparing for output
-
             # disabling input for duration of api call
             upload_file_button.disabled = True
             upload_file_button.update()
@@ -57,12 +54,11 @@ def main(page: ft.Page):
             # receiving output
             gpt_response = view_image(images_in_base64str=base64_images, user_prompt=custom_prompt, max_tokens=300)
 
-            update_text(notification_field, "", visible=False)
+            update_text(notification_field, visible=False)
             progress_bar.visible = False
             progress_bar.update()
-            output_field.visible = True
-            output_field.value = gpt_response
-            output_field.update()
+
+            update_text(output_field, gpt_response)
 
             # enabling input fields on api response
             upload_file_button.disabled = False
@@ -75,6 +71,8 @@ def main(page: ft.Page):
                 update_text(notification_field, "No prompt input", "yellow")
             elif not selected_images:
                 update_text(notification_field, "No images selected", "yellow")
+
+    # UI ELEMENTS
 
     # notifications
     notification_field = ft.Text(value="", width=630)
