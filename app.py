@@ -11,6 +11,12 @@ def update_text(control, value="", color="white", visible=True):
     control.update()
 
 
+def update_control(control, visible=True, disabled=False):
+    control.visible = visible
+    control.disabled = disabled
+    control.update()
+
+
 def main(page: ft.Page):
     page.title = "GPT-Vision UI"
 
@@ -40,31 +46,24 @@ def main(page: ft.Page):
 
             # preparing for output
             # disabling input for duration of api call
-            upload_file_button.disabled = True
-            upload_file_button.update()
-            prompt_input_field.disabled = True
-            prompt_input_field.update()
+            update_control(upload_file_button, disabled=True)
+            update_control(prompt_input_field, disabled=True)
 
             # displaying progress
             update_text(notification_field, "Calling OpenAI Vision API...", "green")
 
-            progress_bar.visible = True
-            progress_bar.update()
+            update_control(progress_bar, visible=True)
 
             # receiving output
             gpt_response = view_image(images_in_base64str=base64_images, user_prompt=custom_prompt, max_tokens=300)
 
-            update_text(notification_field, visible=False)
-            progress_bar.visible = False
-            progress_bar.update()
-
             update_text(output_field, gpt_response)
+            update_text(notification_field, visible=False)
+            update_control(progress_bar, visible=False)
 
             # enabling input fields on api response
-            upload_file_button.disabled = False
-            upload_file_button.update()
-            prompt_input_field.disabled = False
-            prompt_input_field.update()
+            update_control(upload_file_button, disabled=False)
+            update_control(prompt_input_field, disabled=False)
 
         else:
             if not custom_prompt:
