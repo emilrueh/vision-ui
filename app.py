@@ -4,10 +4,13 @@ from src.gpt_vision import view_image
 from src.img_convert import image_to_base64str
 
 
-def update_text(control, value="", color="white", visible=True):
+# HELPER FUNCS
+# ------------
+
+
+def update_text(control, value="", color="white"):
     control.value = value
     control.color = color
-    control.visible = visible
     control.update()
 
 
@@ -17,73 +20,97 @@ def update_control(control, visible=True, disabled=False):
     control.update()
 
 
+# MAIN APP
 def main(page: ft.Page):
-    page.title = "GPT-Vision UI"
+    # APP LOGIC
+    # ---------
 
-    selected_images = []
-    base64_images = []
-    image_verification = "Selected images:\n"
+    CUSTOM_PROMPT = ""
+    SELECTED_IMAGES = []
+    SELECTED_IMAGES_MSG = ""
 
     def pick_files_result(event: ft.FilePickerResultEvent):
-        nonlocal image_verification
-
-        update_text(output_field, visible=False)
+        nonlocal SELECTED_IMAGES_MSG
 
         if event.files:
             for s_img in event.files:
-                selected_images.append(s_img)
-                image_verification += f"{s_img.name}\n"
-            update_text(notification_field, image_verification)
+                SELECTED_IMAGES.append(s_img)
+                SELECTED_IMAGES_MSG += f"{s_img.name}\n"
 
-        if not selected_images:
-            update_text(notification_field, "No file selected", "yellow")
+            update_text(notification_field, SELECTED_IMAGES_MSG)
+            update_control(notification_field, visible=True, disabled=False)
+
+        if not SELECTED_IMAGES:
+            handle_missing_input()
 
     def call_vision(event):
-        custom_prompt = prompt_input_field.value
-        if custom_prompt and selected_images:
-            for img in selected_images:
+        nonlocal CUSTOM_PROMPT
+
+        CUSTOM_PROMPT = prompt_input_field.value
+
+        if CUSTOM_PROMPT and SELECTED_IMAGES:
+            base64_images = []
+
+            for img in SELECTED_IMAGES:
                 base64_images.append(image_to_base64str(image_source=img.path, file_type="JPEG"))
 
-            # preparing for output
-            # disabling input for duration of api call
-            update_control(upload_file_button, disabled=True)
-            update_control(prompt_input_field, disabled=True)
+            prepare_for_vision()
 
-            # displaying progress
-            update_text(notification_field, "Calling OpenAI Vision API...", "green")
-
-            update_control(progress_bar, visible=True)
-
-            # receiving output
-            gpt_response = view_image(images_in_base64str=base64_images, user_prompt=custom_prompt, max_tokens=300)
-
+            gpt_response = view_image(images_in_base64str=base64_images, user_prompt=CUSTOM_PROMPT, max_tokens=300)
             update_text(output_field, gpt_response)
-            update_text(notification_field, visible=False)
-            update_control(progress_bar, visible=False)
 
-            # enabling input fields on api response
-            update_control(upload_file_button, disabled=False)
-            update_control(prompt_input_field, disabled=False)
+            unprepare_from_vision()
 
         else:
-            if not custom_prompt:
-                update_text(notification_field, "No prompt input", "yellow")
-            elif not selected_images:
-                update_text(notification_field, "No images selected", "yellow")
+            handle_missing_input()
+
+    # EVENT HANDLERS
+    # --------------
+
+    def prepare_for_vision():
+        # disble input
+        update_control(upload_file_button, disabled=True)
+        update_control(prompt_input_field, disabled=True)
+        # hide output
+        update_control(output_field, visible=False, disabled=True)
+        # display progress
+        update_text(notification_field, "Calling OpenAI Vision API...", "green")
+        update_control(progress_bar, visible=True)
+
+    def unprepare_from_vision():
+        # hide progress
+        update_control(notification_field, visible=False)
+        update_control(progress_bar, visible=False)
+        # display output
+        update_control(output_field, visible=True, disabled=False)
+        # enable input
+        update_control(upload_file_button, disabled=False)
+        update_control(prompt_input_field, disabled=False)
+
+    def handle_missing_input():
+        warning = []
+        if not CUSTOM_PROMPT:
+            warning.append("No prompt input")
+        if not SELECTED_IMAGES:
+            warning.append("No images selected")
+        warning_msg = "\n".join(warning) if len(warning) > 1 else warning[0]
+
+        update_text(notification_field, warning_msg, "yellow")
+        update_control(notification_field, visible=True, disabled=False)
 
     # UI ELEMENTS
+    # -----------
 
-    # notifications
+    page.title = "GPT-Vision UI"
+
     notification_field = ft.Text(value="", width=630)
-
-    # picking files
+    # file picker
     pick_files_dialog = ft.FilePicker(on_result=pick_files_result)
     page.overlay.append(pick_files_dialog)
     upload_file_button = ft.ElevatedButton(
         text="Select File", on_click=lambda _: pick_files_dialog.pick_files(allow_multiple=True), height=50
     )
-
-    # calling vision
+    # vision call
     prompt_input_field = ft.TextField(label="Input Prompt", on_submit=call_vision, width=500)
     output_field = ft.TextField(
         value="",
@@ -95,7 +122,7 @@ def main(page: ft.Page):
     )
     progress_bar = ft.ProgressBar(visible=False, color="green", width=630)
 
-    # aligning elements
+    # structure
     input_row = ft.Row(controls=[upload_file_button, prompt_input_field], spacing=10, alignment="center")
     complete_column = ft.Column(
         controls=[input_row, notification_field, progress_bar, output_field],
