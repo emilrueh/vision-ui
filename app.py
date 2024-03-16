@@ -2,22 +2,7 @@ import flet as ft
 
 from src.gpt_vision import view_image
 from src.img_convert import image_to_base64str
-
-
-# HELPER FUNCS
-# ------------
-
-
-def update_text(control, value="", color="white"):
-    control.value = value
-    control.color = color
-    control.update()
-
-
-def update_control(control, visible=True, disabled=False):
-    control.visible = visible
-    control.disabled = disabled
-    control.update()
+from src.helper import update_text, update_control, load_text
 
 
 # MAIN APP
@@ -26,6 +11,7 @@ def main(page: ft.Page):
     # ---------
 
     CUSTOM_PROMPT = ""
+    system_prompt = load_text("default_system_prompt.txt")
     SELECTED_IMAGES = []
     SELECTED_IMAGES_MSG = ""
 
@@ -45,6 +31,7 @@ def main(page: ft.Page):
 
     def call_vision(event):
         nonlocal CUSTOM_PROMPT
+        nonlocal system_prompt
 
         CUSTOM_PROMPT = prompt_input_field.value
 
@@ -56,7 +43,9 @@ def main(page: ft.Page):
 
             prepare_for_vision()
 
-            gpt_response = view_image(images_in_base64str=base64_images, user_prompt=CUSTOM_PROMPT, max_tokens=300)
+            gpt_response = view_image(
+                images_in_base64str=base64_images, user_prompt=CUSTOM_PROMPT, system_prompt=system_prompt, max_tokens=300
+            )
             update_text(output_field, gpt_response)
 
             unprepare_from_vision()
