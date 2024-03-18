@@ -53,7 +53,7 @@ def main(page: ft.Page):
             uploaded_files_counter.value = img_count
             update_control(uploaded_files_counter, visible=True)
 
-            upload_file_button.bgcolor = "blue"
+            upload_file_button.style.bgcolor = "blue"
             upload_file_button.update()
 
     def call_vision(event):
@@ -65,19 +65,22 @@ def main(page: ft.Page):
 
         if prompt and files_raw_list:
             b64_images = [image_to_base64str(image_source=img.path, file_type="JPEG") for img in files_raw_list]
-
+            progress_ring.visible = True
+            progress_ring.update()
             gpt_response = view_image(
                 images_in_base64str=b64_images, user_prompt=prompt, system_prompt=system_prompt, max_tokens=300
             )
+            progress_ring.visible = False
+            progress_ring.update()
             if output_field.value:
                 output_field.value += "\n\n\n"
-            output_field.value += f"VISION:\n------\n\n{gpt_response}"
+            output_field.value += f"VISION:\n--------\n\n{gpt_response}"
             update_control(output_field)
         if not prompt.strip():
             input_field.border_color = "red"
             input_field.update()
         if not files_raw_list:
-            upload_file_button.bgcolor = "red"
+            upload_file_button.style.bgcolor = "red"
             upload_file_button.update()
 
     def open_settings(event):
@@ -100,14 +103,12 @@ def main(page: ft.Page):
         icon=ft.icons.UPLOAD_ROUNDED,
         on_click=lambda _: pick_files_dialog.pick_files(allow_multiple=True),
         height=42,
+        style=ft.ButtonStyle(bgcolor="blue"),
     )
-    upload_file_button.bgcolor = "blue"
     uploaded_files_counter = ft.Text(visible=False)
 
-    # text input
+    # text input output
     input_field = ft.TextField(label="Input prompt", on_submit=call_vision, width=500, border_width=1)
-
-    # text output
     output_field = ft.TextField(
         value="",
         width=600,
@@ -126,12 +127,13 @@ def main(page: ft.Page):
     submit_button = ft.IconButton(icon=ft.icons.CHECK_BOX_ROUNDED, on_click=close_settings)
     system_prompt_view = ft.Column(controls=[system_prompt_field, submit_button], visible=False, disabled=True)
     settings_button = ft.IconButton(icon=ft.icons.SETTINGS, on_click=open_settings)
+    progress_ring = ft.ProgressRing(visible=False)
 
     # structure
     upload_row = ft.Row(controls=[upload_file_button, uploaded_files_counter])
     file_col = ft.Column()
 
-    input_row = ft.Row(controls=[settings_button, input_field])
+    input_row = ft.Row(controls=[settings_button, input_field, progress_ring])
 
     left_col = ft.Column(controls=[upload_row, file_col])
     right_col = ft.Column(controls=[output_field, input_row])
